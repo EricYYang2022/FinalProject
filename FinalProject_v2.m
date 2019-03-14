@@ -1,4 +1,5 @@
-clear; close all; clc;
+clear; close all; 
+%clc;
 
 dimens = 20;
 a = linspace(0, pi/2, dimens);
@@ -32,22 +33,24 @@ end
 cosphi = cell(1,3);
 M = zeros(dimens, dimens);
 N = zeros(dimens, dimens);
+P = zeros(dimens, dimens);
+Q = zeros(dimens, dimens);
 for kk = 1:dimens
     %angle first
     u = unit_v{kk};
-        cosphi{1,2} = dot(u, cross_s2)/norm(cross_s2, 2);
-        cosphi{1,3} = dot(u, cross_s3)/norm(cross_s3, 2);
-       
-        %sometimes this stuff generates 0's so we can't use matlabfunction
-        integraled2 = 1/pi * (cosphi{1, 2})^3 * norm(cross_s2, 2);
-        int_once2 = int(integraled2, r, 0, 10);
-        int_twice2 = int(int_once2, t, 0, 2*pi);
-        
-        integraled3 = 1/pi * (cosphi{1, 3})^3 * norm(cross_s3, 2);
-        int_once3 = int(integraled3, r, 0, 2);
-        int_twice3 = int(int_once3, t, 0, 2*pi);
-        
-        sumflux = int_twice2 + int_twice3;
+    cosphi{1,2} = dot(u, cross_s2)/norm(cross_s2, 2);
+    cosphi{1,3} = dot(u, cross_s3)/norm(cross_s3, 2);
+
+    %sometimes this stuff generates 0's so we can't use matlabfunction
+    integraled2 = 1/pi * (cosphi{1, 2})^3 * norm(cross_s2, 2);
+    int_once2 = int(integraled2, r, 0, 10);
+    int_twice2 = int(int_once2, t, 0, 2*pi);
+
+    integraled3 = 1/pi * (cosphi{1, 3})^3 * norm(cross_s3, 2);
+    int_once3 = int(integraled3, r, 0, 2);
+    int_twice3 = int(int_once3, t, 0, 2*pi);
+
+    sumflux = int_twice2 + int_twice3;
     for ll = 1:dimens
 
         n1 = cross_s1{ll};
@@ -55,26 +58,38 @@ for kk = 1:dimens
         normm = norm(cross_s1{ll}, 2); %||ru x rv||
         cosphii = matlabFunction(1./pi.*(cosphi{1,1}).^3.*normm);
         int_twice = integral2(cosphii, 0, 2, 0, 2*pi);
+        P(kk, ll) = int_twice;
 %         integraled = 1/pi * (cosphi{1,1})^3;
 %         int_once = int(integraled, r, 0, 5);
 %         int_twice = int(int_once, t, 0, 2*pi);
 
 %         M(ll, kk) = double(sumflux + int_twice);
-        M(ll, kk) = sumflux + int_twice;
+        M(kk,ll) = sumflux + int_twice;
         volumee = 10*pi*2^2 + ...
-        integral2(@(rr,tt)(-s(ll).*(rr.^2) + 4.*s(ll)), 0, 2, 0, 2*pi)
-        N(ll, kk) = M(ll, kk)/volumee;
+        integral2(@(rr,tt)(rr.*(-s(ll).*(rr.^2) + 4.*s(ll))), 0, 2, 0, 2*pi);
+        N(kk,ll) = M(kk, ll)/volumee;
+%         disp(N(kk,ll))
+        Q(kk, ll) = P(kk, ll)/volumee;
 %         disp(M(ll, kk));
 %         disp(N(ll, kk));
-            
+%         if (kk == 2) && (ll == 3)
+%             fprintf('debug test at s = %.4f, a = %.4f\n', s(ll), a(kk))
+%             disp(M(kk,ll))
+%             disp(N(kk,ll))
+%             disp(volumee)
+%         end
     end
 end
 hold on; 
 surf(s, a*180/pi, M); 
+colorbar;
 view([60, 60, 60])
 title('Friction Coefficient')
 xlabel('s')
 ylabel(['\alpha (' 176 ')'])
+lim = caxis;
+caxis manual;
+axis([0 6 0 100 0 8 0 8])
 
 figure;
 surf(s, a*180/pi, N);
@@ -82,3 +97,17 @@ view([60, 60, 60])
 title('Friction Coefficient per mass')
 xlabel('s')
 ylabel(['\alpha (' 176 ')'])
+lim = caxis;
+caxis manual;
+axis([0 6 0 100 0 .08 0 .08])
+% figure; 
+% surf(s, a*180/pi, P);
+% title('Friction Coefficient (rocket head)')
+% xlabel('s')
+% ylabel(['\alpha (' 176 ')'])
+% 
+% figure; 
+% surf(s, a*180/pi, Q);
+% title('Friction Coefficient per mass (rocket head)')
+% xlabel('s')
+% ylabel(['\alpha (' 176 ')'])
